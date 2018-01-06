@@ -1,6 +1,7 @@
 'use strict';
 
 //https://app.redislabs.com/#/login
+//https://redisdesktop.com/download
 
 let http = require('http');
 let express = require('express');
