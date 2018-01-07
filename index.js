@@ -11,9 +11,10 @@ let fs = require('fs');
 let bodyParser = require('body-parser');
 let auth = require('basic-auth');
 let redis = require('redis');
+let path = require('path');
 
-
-
+let port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080;
+let ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
 let allowCrossDomain = function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
@@ -31,19 +32,20 @@ let allowCrossDomain = function (req, res, next) {
 
 let app = express();
 app.use(allowCrossDomain);
+app.use(express.static(__dirname + '/images'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/', (req, res, next) => {    
+app.get('/', (req, res) => {    
    
     res.sendFile(path.join(__dirname + '/api.html'));   
 });
 
-app.get('/redisstringsample', (req, res, next) => { 
+app.get('/redisstringsample', (req, res) => { 
 
     let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
 
-    redisClient.auth('password',(err,reply) => {
+    redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
         console.log(err);
         console.log(reply);
     });
@@ -67,11 +69,11 @@ app.get('/redisstringsample', (req, res, next) => {
     });       
 });
 
-app.get('/redislistsample', (req, res, next) => { 
+app.get('/redislistsample', (req, res) => { 
 
     let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
 
-    redisClient.auth('password',(err,reply) => {
+    redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
         console.log(err);
         console.log(reply);
     });
@@ -91,12 +93,11 @@ app.get('/redislistsample', (req, res, next) => {
     });       
 });
 
-
-app.get('/redissetsample', (req, res, next) => { 
+app.get('/redissetsample', (req, res) => { 
 
     let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
 
-    redisClient.auth('password',(err,reply) => {
+    redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
         console.log(err);
         console.log(reply);
     });
@@ -111,13 +112,12 @@ app.get('/redissetsample', (req, res, next) => {
      console.log("Error in Redis");
     });     
 });
-
  
-app.get('/redishashsample', (req, res, next) => { 
+app.get('/redishashsample', (req, res) => { 
 
     let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
 
-    redisClient.auth('password',(err,reply) => {
+    redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
         console.log(err);
         console.log(reply);
     });
@@ -141,13 +141,10 @@ app.get('/redishashsample', (req, res, next) => {
     });       
 });
 
+app.get('/rediszsetsample', (req, res) => {
+    let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
 
-
-
-app.get('/rediszsetsample', (req, res, next) => {
-let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
-
-    redisClient.auth('password',(err,reply) => {
+    redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
         console.log(err);
         console.log(reply);
     });
@@ -175,14 +172,10 @@ let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.clo
     });       
 
 
+    });
 });
 
-});
-
-
-
-
-app.post('/', (req, res, next) => {
+app.post('/', (req, res) => {
 
     let credentials = auth(req);
     if (!credentials || credentials.name !== 'diego' || credentials.pass !== 'secret') {
@@ -196,7 +189,7 @@ app.post('/', (req, res, next) => {
     
 });
 
-app.get('/flowers', (req, res, next) => {
+app.get('/flowers', (req, res) => {
     mongoClient.connect(config.mongoConnectionString, (err, client) => {
         if (err) res.send('error');
 
@@ -209,10 +202,7 @@ app.get('/flowers', (req, res, next) => {
     });
 });
 
-
-
-
-app.post('/updateflowernotes', (req, res, next) => {
+app.post('/updateflowernotes', (req, res) => {
     let credentials = auth(req);
     if (!credentials || credentials.name !== 'diego' || credentials.pass !== 'secret') {
         res.statusCode = 401;
@@ -243,10 +233,9 @@ app.post('/updateflowernotes', (req, res, next) => {
 });
 
 
+app.listen(port, ip);
+console.log('Server running on http://%s:%s', ip, port);
 
-let serverUnsecure = http.createServer(app).listen(process.env.PORT || 3000, function () {
-    console.log('Server express running at. ' + serverUnsecure.address().address + ':' + serverUnsecure.address().port + ' ');
-});
 
 
 
