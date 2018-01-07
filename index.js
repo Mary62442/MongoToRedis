@@ -233,6 +233,43 @@ app.post('/updateflowernotes', (req, res) => {
 });
 
 
+app.post('/postredis', (req, res) => {
+    let credentials = auth(req);
+        if (!credentials || credentials.name !== 'maria' || credentials.pass !== 'secret') {
+            res.statusCode = 401;
+            res.setHeader('WWW-Authenticate', 'Basic realm = "example"');
+            res.end('Access denied');
+        } else {
+          let body = req.body;
+          let key = body.Key;
+          let value = body.Value;
+          let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
+
+            redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
+                console.log(err);
+                console.log(reply);
+            });
+
+            redisClient.on('ready',() =>{
+              console.log("Redis is ready");
+              redisClient.set(key,value,(err,reply)=> {
+                  console.log(err);
+                  console.log(reply);
+
+                  redisClient.get(key,(err,reply) =>{
+                   console.log(err);
+                   console.log(reply);
+                   res.send(reply);
+                  });
+              });     
+          });
+          redisClient.on('error',() => {
+          console.log("Error in Redis");
+          });
+    }   
+});
+
+
 app.listen(port, ip);
 console.log('Server running on http://%s:%s', ip, port);
 
