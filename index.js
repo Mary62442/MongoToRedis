@@ -12,6 +12,13 @@ let bodyParser = require('body-parser');
 let auth = require('basic-auth');
 let redis = require('redis');
 let path = require('path');
+let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
+redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
+    console.log(err);
+    console.log(reply);
+});
+redisClient.on('ready',() =>{ console.log("Redis is ready"); });
+redisClient.on('error',() => { console.log("Error in Redis"); });
 
 let port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080;
 let ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
@@ -30,163 +37,23 @@ let allowCrossDomain = function (req, res, next) {
     }
 }
 
+let authenticator = (req,res,next)=> {
+    let credentials = auth(req);
+    if (!credentials || credentials.name !== 'maria' || credentials.pass !== 'secret') {
+        res.statusCode = 401;
+        res.setHeader('WWW-Authenticate', 'Basic realm = "example"');
+        res.end('Access denied');
+    } else { next();}
+}
+
 let app = express();
 app.use(allowCrossDomain);
-app.use(express.static(__dirname + '/images'));
+app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {    
-   
-    res.sendFile(path.join(__dirname + '/api.html'));   
-});
-
-app.get('/redisstringsample', (req, res) => { 
-
-    let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
-
-    redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
-        console.log(err);
-        console.log(reply);
-    });
-
-    redisClient.on('ready',() =>{
-        console.log("Redis is ready");
-        redisClient.set("Agrimony","Agrimony is the first flower in the list",(err,reply)=> {
-            console.log(err);
-            console.log(reply);
-
-            redisClient.get("Agrimony",(err,reply) =>{
-             console.log(err);
-             console.log(reply);
-             res.send(reply);
-            });
-        });     
-    });
-
-    redisClient.on('error',() => {
-     console.log("Error in Redis");
-    });       
-});
-
-app.get('/redislistsample', (req, res) => { 
-
-    let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
-
-    redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
-        console.log(err);
-        console.log(reply);
-    });
-
-    redisClient.on('ready',() =>{
-        console.log("Redis is ready");
-        redisClient.rpush(["Flowers","Agrimony","Chicory","Holly","Holly"],(err,reply) => {
-         console.log(err);
-         console.log(reply);
-         res.send('Number of elements = ' + reply);
-        });
-        });     
-    
-
-    redisClient.on('error',() => {
-     console.log("Error in Redis");
-    });       
-});
-
-app.get('/redissetsample', (req, res) => { 
-
-    let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
-
-    redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
-        console.log(err);
-        console.log(reply);
-    });
-
-    redisClient.sadd(["Setflowers","Agrimony","Agrimony","Centaury"],function(err,reply) {
-     console.log(err);
-     console.log(reply);
-     res.send('Number of elements = ' + reply);
-    });    
-
-    redisClient.on('error',() => {
-     console.log("Error in Redis");
-    });     
-});
- 
-app.get('/redishashsample', (req, res) => { 
-
-    let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
-
-    redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
-        console.log(err);
-        console.log(reply);
-    });
-
-    redisClient.on('ready',() =>{
-        console.log("Redis is ready");
-        redisClient.hmset("Chicory","Name", "Chicory","Color","White",(err,reply)=> {
-            console.log(err);
-            console.log(reply);
-
-            redisClient.hgetall("Chicory",(err,reply) =>{
-             console.log(err);
-             console.log(reply);
-             res.send(reply);
-            });
-        });     
-    });
-
-    redisClient.on('error',() => {
-     console.log("Error in Redis");
-    });       
-});
-
-app.get('/rediszsetsample', (req, res) => {
-    let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
-
-    redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
-        console.log(err);
-        console.log(reply);
-    });
-
-
-
- redisClient.on('ready',() =>{
-        console.log("Redis is ready");
-        let args = [ 'myzset', 10, 'ten', 2, 'two', 3, 'three', 99, 'ninety-nine' ];
-        redisClient.zadd(args,  (err, reply) => {
-            if (err) throw err;
-            console.log('added '+reply+' items.');
-           
-
-            redisClient.zrange('myzset', 0,3,'WITHSCORES', (err, reply) => {
-            if (err) throw err;
-            res.send(JSON.stringify(reply));
-            });
-        });
-
-
-
-    redisClient.on('error',() => {
-     console.log("Error in Redis");
-    });       
-
-
-    });
-});
-
-app.post('/', (req, res) => {
-
-    let credentials = auth(req);
-    if (!credentials || credentials.name !== 'diego' || credentials.pass !== 'secret') {
-        res.statusCode = 401;
-        res.setHeader('WWW-Authenticate', 'Basic realm="example"');
-        res.end('Access denied');
-    } else {
-        // do the things an authorized user can do
-        res.end('Access granted');
-    }
-    
+    res.sendFile(path.join(__dirname + '/public/api.html'));   
 });
 
 app.get('/flowers', (req, res) => {
@@ -202,73 +69,101 @@ app.get('/flowers', (req, res) => {
     });
 });
 
-app.post('/updateflowernotes', (req, res) => {
-    let credentials = auth(req);
-    if (!credentials || credentials.name !== 'diego' || credentials.pass !== 'secret') {
-        res.statusCode = 401;
-        res.setHeader('WWW-Authenticate', 'Basic realm = "example"');
-        res.end('Access denied');
-    } else {
-        // user is authenticated
-        res.statusCode = 200;
-        mongoClient.connect(config.mongoConnectionString, (err, client) => {
-            let body = req.body;
-            if (err) console.log(err);
-            const db = client.db('marymongodb');
-            let flowers = db.collection('BachFlowers');
-            flowers.update({ Name: req.body.Name },
-                {
-                    $set: { Notes: req.body.Notes }
-                }, { multi: false }, (err, result) => {
-                    if (err) {
-                        console.log(err);
-                        res.send(JSON.stringify(err));
-                    }
-                    client.close();
-                    console.log('Successfuly updated: ' + result + ' records.');
-                    res.send(JSON.stringify(result));
-                });
-        });    
-    }
+//app.use(authenticator);
+
+// app.get('/redisstringsample', (req, res) => { 
+//     redisClient.set("Agrimony","Agrimony is the first flower in the list",(err,reply)=> {
+//         console.log(err);
+//         console.log(reply);
+
+//         redisClient.get("Agrimony",(err,reply) =>{
+//          console.log(err);
+//          console.log(reply);
+//          res.send(reply);
+//         });
+//     });     
+// });
+
+app.get('/redislistsample', (req, res) => {
+    redisClient.rpush(["Flowers","Agrimony","Chicory","Holly","Holly"],(err,reply) => {
+     console.log(err);
+     console.log(reply);
+     res.send('Number of elements = ' + reply);
+    });
 });
 
+app.get('/redissetsample', (req, res) => {     
+    redisClient.sadd(["Setflowers","Agrimony","Agrimony","Centaury"],function(err,reply) {
+     console.log(err);
+     console.log(reply);
+     res.send('Number of elements = ' + reply);
+    });   
+});
+ 
+app.get('/redishashsample', (req, res) => { 
+    redisClient.hmset("Chicory","Name", "Chicory","Color","White",(err,reply)=> {
+        console.log(err);
+        console.log(reply);
+        redisClient.hgetall("Chicory",(err,reply) =>{
+         console.log(err);
+         console.log(reply);
+         res.send(reply);
+        });
+    });
+});
 
-app.post('/postredis', (req, res) => {
-    let credentials = auth(req);
-        if (!credentials || credentials.name !== 'maria' || credentials.pass !== 'secret') {
-            res.statusCode = 401;
-            res.setHeader('WWW-Authenticate', 'Basic realm = "example"');
-            res.end('Access denied');
-        } else {
-          let body = req.body;
-          let key = body.Key;
-          let value = body.Value;
-          let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
+app.get('/rediszsetsample', (req, res) => {    
+    let args = [ 'myzset', 10, 'ten', 2, 'two', 3, 'three', 99, 'ninety-nine' ];
+    redisClient.zadd(args,  (err, reply) => {
+        if (err) throw err;
+        console.log('added '+reply+' items.');
+        redisClient.zrange('myzset', 0,3,'WITHSCORES', (err, reply) => {
+            if (err) throw err;
+            res.send(JSON.stringify(reply));
+        }); 
+    });
+});
 
-            redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
+app.post('/updateflowernotes', authenticator, (req, res) => {
+    
+    res.statusCode = 200;
+    mongoClient.connect(config.mongoConnectionString, (err, client) => {
+        let body = req.body;
+        if (err) console.log(err);
+        const db = client.db('marymongodb');
+        let flowers = db.collection('BachFlowers');
+        flowers.update({ Name: req.body.Name },
+        {
+            $set: { Notes: req.body.Notes }
+        }, { multi: false }, (err, result) => {
+            if (err) {
                 console.log(err);
-                console.log(reply);
-            });
-
-            redisClient.on('ready',() =>{
-              console.log("Redis is ready");
-              redisClient.set(key,value,(err,reply)=> {
-                  console.log(err);
-                  console.log(reply);
-
-                  redisClient.get(key,(err,reply) =>{
-                   console.log(err);
-                   console.log(reply);
-                   res.send(reply);
-                  });
-              });     
-          });
-          redisClient.on('error',() => {
-          console.log("Error in Redis");
-          });
-    }   
+                res.send(JSON.stringify(err));
+            }
+            client.close();
+            console.log('Successfuly updated: ' + result + ' records.');
+            res.send(JSON.stringify(result));
+        });
+    }); 
 });
 
+
+app.put('/putstringtoredis', authenticator, (req, res) => {
+   
+        let body = req.body;
+        let key = body.Key;
+        let value = body.Value; 
+        redisClient.set(key,value,(err,reply)=> {
+            console.log(err);
+            console.log(reply);
+            redisClient.get(key,(err,reply) =>{
+            console.log(err);
+            console.log(reply);
+            res.send(reply);
+            });
+        }); 
+    
+});
 
 app.listen(port, ip);
 console.log('Server running on http://%s:%s', ip, port);

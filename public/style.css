@@ -1,0 +1,31 @@
+body {
+	margin:0;
+	padding:0;
+	background-color:#321746;
+	font-family: 'Source Sans Pro', sans-serif;
+	color:#f2e2ff;
+}
+.api-title {
+	text-align:center;	
+}
+
+.apis {
+	font-size:1.2em;
+	text-align:center;
+}
+
+.apis > p {
+	font-weight:bold;
+}
+
+.apis > ul {
+	list-style-type: none;
+	padding:0;
+}
+
+.apis > ul >li {
+	padding: 1em;
+	border-bottom:1px solid #574167;
+	width:50%;
+	margin:0 auto;
+}
