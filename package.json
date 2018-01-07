@@ -22,5 +22,13 @@
     "express": "^4.16.2",
     "mongodb": "^3.0.1",
     "redis": "^2.8.0"
+  },
+  "engine": {
+    "node": "*",
+    "npm": "*"
+  },
+  "scripts": {
+    "start": "node index.js"
   }
+
 }
