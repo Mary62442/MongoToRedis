@@ -8,8 +8,13 @@
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
-<body>
+<body ng-app="api" ng-controller="apiCtrl as vm">
     <h1 class="api-title">Maria's Rest APIs</h1>
+
+    <!-- <div>{{vm.test}}</div>
+    <div>{{vm.title}}</div>
+    <div>{{vm.myText}}</div>  
+    <input type="text" ng-model="vm.myText">  -->
     <div class = "apis">
         <p>The following are the routes:</p>
         <ul>
@@ -20,10 +25,10 @@
             <li>/redishashsample to get a hash table to my RedisDB</li>
             <li>/rediszsetsample to get a zset to my RedisDB</li>
             <li>/putstringtoredis to put strings to my Redis DB</li>
-        <ul>
-    </ul><div>
+        
+        </ul>
+    </div>
 
-        <div ng-app="api" ng-controller="MainCtrl as vm"></div>
 
         <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.6/angular.min.js"></script>
