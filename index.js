@@ -1,5 +1,4 @@
 'use strict';
-
 //https://app.redislabs.com/#/login
 //https://redisdesktop.com/download
 
@@ -12,6 +11,11 @@ let bodyParser = require('body-parser');
 let auth = require('basic-auth');
 let redis = require('redis');
 let path = require('path');
+// Session 
+let session = require('express-session');
+let redisStore = require('connect-redis')(session);
+
+
 let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
 redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
     console.log(err);
@@ -47,12 +51,23 @@ let authenticator = (req,res,next)=> {
 }
 
 let app = express();
+
+app.use(session({
+    secret: 'gvqZnurvxrSs6sN',
+    cookie: { maxAge: 60000 },
+    // create new redis store.
+    store: new redisStore({client: redisClient}), //https://github.com/tj/connect-redis    for ttl (expiration)
+    saveUninitialized: false,
+    resave: false
+}));
+
 app.use(allowCrossDomain);
 app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {    
+app.get('/', (req, res) => { 
+req.session.diego ="Diego Aldo burlando" ;  
     res.sendFile(path.join(__dirname + '/public/api.html'));   
 });
 
