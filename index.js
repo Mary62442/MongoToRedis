@@ -84,45 +84,45 @@ app.get('/flowers', (req, res) => {
 //     });     
 // });
 
-app.get('/redislistsample', (req, res) => {
-    redisClient.rpush(["Flowers","Agrimony","Chicory","Holly","Holly"],(err,reply) => {
-     console.log(err);
-     console.log(reply);
-     res.send('Number of elements = ' + reply);
-    });
-});
+// app.get('/redislistsample', (req, res) => {
+//     redisClient.rpush(["Flowers","Agrimony","Chicory","Holly","Holly"],(err,reply) => {
+//      console.log(err);
+//      console.log(reply);
+//      res.send('Number of elements = ' + reply);
+//     });
+// });
 
-app.get('/redissetsample', (req, res) => {     
-    redisClient.sadd(["Setflowers","Agrimony","Agrimony","Centaury"],function(err,reply) {
-     console.log(err);
-     console.log(reply);
-     res.send('Number of elements = ' + reply);
-    });   
-});
+// app.get('/redissetsample', (req, res) => {     
+//     redisClient.sadd(["Setflowers","Agrimony","Agrimony","Centaury"],(err,reply) => {
+//      console.log(err);
+//      console.log(reply);
+//      res.send('Number of elements = ' + reply);
+//     });   
+// });
  
-app.get('/redishashsample', (req, res) => { 
-    redisClient.hmset("Chicory","Name", "Chicory","Color","White",(err,reply)=> {
-        console.log(err);
-        console.log(reply);
-        redisClient.hgetall("Chicory",(err,reply) =>{
-         console.log(err);
-         console.log(reply);
-         res.send(reply);
-        });
-    });
-});
+// app.get('/redishashsample', (req, res) => { 
+//     redisClient.hmset("Chicory","Name", "Chicory","Color","White",(err,reply)=> {
+//         console.log(err);
+//         console.log(reply);
+//         redisClient.hgetall("Chicory",(err,reply) =>{
+//          console.log(err);
+//          console.log(reply);
+//          res.send(reply);
+//         });
+//     });
+// });
 
-app.get('/rediszsetsample', (req, res) => {    
-    let args = [ 'myzset', 10, 'ten', 2, 'two', 3, 'three', 99, 'ninety-nine' ];
-    redisClient.zadd(args,  (err, reply) => {
-        if (err) throw err;
-        console.log('added '+reply+' items.');
-        redisClient.zrange('myzset', 0,3,'WITHSCORES', (err, reply) => {
-            if (err) throw err;
-            res.send(JSON.stringify(reply));
-        }); 
-    });
-});
+// app.get('/rediszsetsample', (req, res) => {    
+//     let args = [ 'myzset', 10, 'ten', 2, 'two', 3, 'three', 99, 'ninety-nine' ];
+//     redisClient.zadd(args,  (err, reply) => {
+//         if (err) throw err;
+//         console.log('added '+reply+' items.');
+//         redisClient.zrange('myzset', 0,3,'WITHSCORES', (err, reply) => {
+//             if (err) throw err;
+//             res.send(JSON.stringify(reply));
+//         }); 
+//     });
+// });
 
 app.post('/updateflowernotes', authenticator, (req, res) => {
     
@@ -148,21 +148,73 @@ app.post('/updateflowernotes', authenticator, (req, res) => {
 });
 
 
-app.put('/putstringtoredis', authenticator, (req, res) => {
-   
-        let body = req.body;
-        let key = body.Key;
-        let value = body.Value; 
-        redisClient.set(key,value,(err,reply)=> {
-            console.log(err);
-            console.log(reply);
-            redisClient.get(key,(err,reply) =>{
-            console.log(err);
-            console.log(reply);
-            res.send(reply);
-            });
-        }); 
+app.put('/putstringtoredis', authenticator, (req, res) => {   
+    let body = req.body;
+    let key = body.Key;
+    let value = body.Value; 
+    redisClient.set(key,value,(err,reply)=> {
+        console.log(err);
+        console.log(reply);
+        redisClient.get(key,(err,reply) =>{
+        console.log(err);
+        console.log(reply);
+        res.send(reply);
+        });
+    });     
+});
+
+app.put('/putlisttoredis', authenticator, (req, res) => {   
+    let body = req.body;
+    let listName = body.ListName;
+    let listValues = body.ListValues;    
+    let counter = 0;
+    for (let item of listValues) {
+      redisClient.rpush([listName, item],(err,reply) => {        
+        counter+=1;
+        if (counter === listValues.length) { res.send('Number of elements = ' + reply); }
+    });
+    }       
+});
+
+app.put('/puthashtoredis', authenticator, (req, res) => {   
+    let body = req.body;
+    let hashName = body.HashName;
+    let keyvalues = body.KeyValues;
     
+    redisClient.hmset(hashName, keyvalues,(err,reply)=> {                    
+        res.send(reply);  
+
+    });
+               
+});    
+
+app.put('/putzsettoredis', authenticator, (req, res) => { 
+
+ let body = req.body;
+ 
+    let zsetName = body.ZsetName;
+    let keyValues = body.KeyValues; 
+    keyValues.unshift(zsetName);
+   
+    console.log(keyValues);    
+    redisClient.zadd(keyValues, (err,reply) => { 
+    res.send("Number of items added = " + reply);
+    });       
+});  
+
+app.put('/putsettoredis', authenticator, (req, res) => {   
+    let body = req.body;
+    let setName = body.SetName;
+    let setValues = body.SetValues;    
+    let counter = 0;
+    let counterRight = 0;
+    for (let item of setValues) {
+        redisClient.sadd([setName, item], (err,reply) => { 
+        if(reply!==0) { counterRight+=1};       
+        counter+=1;
+        if (counter === setValues.length) { res.send('Number of elements = ' + counterRight); }
+        });
+    }           
 });
 
 app.listen(port, ip);
