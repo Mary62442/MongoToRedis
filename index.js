@@ -27,13 +27,16 @@ let redisStore = require('connect-redis')(session);
 // });
 
 
-let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
-redisClient.auth('eRh88pUtQZfwu2mp',(err,reply) => {
+let redisClientforSessions = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
+redisClientforSessions.auth('eRh88pUtQZfwu2mp',(err,reply) => {
     console.log(err);
     console.log(reply);
 });
-redisClient.on('ready',() =>{ console.log("Redis is ready"); });
-redisClient.on('error',() => { console.log("Error in Redis"); });
+redisClientforSessions.on('ready',() =>{ console.log("Redis is ready"); });
+redisClientforSessions.on('error',() => { console.log("Error in Redis"); });
+
+
+
 
 let port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080;
 let ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
@@ -67,7 +70,7 @@ app.use(session({
     secret: 'gvqZnurvxrSs6sN',
     cookie: { maxAge: 3600 * 1000 },
     // create new redis store.
-    store: new redisStore({client: redisClient}), //https://github.com/tj/connect-redis    for ttl (expiration)
+    store: new redisStore({client: redisClientforSessions}), //https://github.com/tj/connect-redis    for ttl (expiration)
     saveUninitialized: false,
     resave: false
 }));
@@ -84,11 +87,27 @@ app.get('/', (req, res) => {
 
 
 
-app.get('/connect', (req, res) => {
-    req.session.redisConnectionData = {host:'redis-19729.c10.us-east-1-2.ec2.cloud.redislabs.com', port:19729, auth:'taddeo62'};
-    res.send(req.session.redisConnectionData);    
-});
 
+
+app.post('/secureconnect', authenticator, (req, res) => {
+
+    let body = req.body;
+    let connectionInfo = body.ConnectionInfo;
+
+    req.session.connectionInfo = connectionInfo;
+
+    let redisClientUser = redis.createClient({host : connectionInfo.host, port : connectionInfo.port});
+redisClientUser.auth(connectionInfo.auth,(err,reply) => {
+    console.log(err);
+    console.log(reply);
+});
+redisClientUser.on('ready',() =>{ console.log("Redis is connected"); res.send('connection ok')});
+redisClientUser.on('error',() => { console.log("Error in Redis"); res.send('unsuccesful') });
+
+    
+    //req.session.redisConnectionData = {host:'redis-19729.c10.us-east-1-2.ec2.cloud.redislabs.com', port:19729, auth:'taddeo62'};
+    //res.send(req.session.redisConnectionData);    
+});
 
 
 
@@ -184,19 +203,32 @@ app.post('/updateflowernotes', authenticator, (req, res) => {
 });
 
 
-app.put('/putstringtoredis', authenticator, (req, res) => {   
-    let body = req.body;
-    let key = body.Key;
-    let value = body.Value; 
-    redisClient.set(key,value,(err,reply)=> {
-        console.log(err);
-        console.log(reply);
-        redisClient.get(key,(err,reply) =>{
-        console.log(err);
-        console.log(reply);
-        res.send(reply);
+app.put('/putstringtoredis', authenticator, (req, res) => { 
+
+    if (typeof req.session.connectionInfo === 'undefined') {res.send('please connect first');};
+
+    let connectionInfo = req.session.connectionInfo;
+    let redisClientUser = redis.createClient({host : connectionInfo.host, port : connectionInfo.port});
+    redisClientUser.auth(connectionInfo.auth,(err,reply) => {
+    console.log(err);
+    console.log(reply);
+    });
+    redisClientUser.on('ready',() =>{
+
+        let body = req.body;
+        let key = body.Key;
+        let value = body.Value; 
+        redisClientUser.set(key,value,(err,reply)=> {
+            console.log(err);
+            console.log(reply);
+            redisClientUser.get(key,(err,reply) =>{
+                console.log(err);
+                console.log(reply);
+                res.send(reply);
+            });
         });
-    });     
+    });
+    redisClientUser.on('error',() => { console.log("Error in Redis"); res.send('unsuccesful') });
 });
 
 app.put('/putlisttoredis', authenticator, (req, res) => {   
