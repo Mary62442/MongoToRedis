@@ -11,9 +11,20 @@ let bodyParser = require('body-parser');
 let auth = require('basic-auth');
 let redis = require('redis');
 let path = require('path');
+let bcrypt = require('bcrypt');
 // Session 
 let session = require('express-session');
 let redisStore = require('connect-redis')(session);
+
+
+// bcrypt.genSalt(8, function(err, salt) {
+//     bcrypt.hash('diegomary6298', salt, function(err, hash) {
+//         console.log(hash)
+//         bcrypt.compare('diegomary6298', hash, function(err, res) {
+//             console.log(res);   
+// });
+// });
+// });
 
 
 let redisClient = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
@@ -54,7 +65,7 @@ let app = express();
 
 app.use(session({
     secret: 'gvqZnurvxrSs6sN',
-    cookie: { maxAge: 60000 },
+    cookie: { maxAge: 3600 * 1000 },
     // create new redis store.
     store: new redisStore({client: redisClient}), //https://github.com/tj/connect-redis    for ttl (expiration)
     saveUninitialized: false,
@@ -66,10 +77,20 @@ app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => { 
-req.session.diego ="Diego Aldo burlando" ;  
+app.get('/', (req, res) => {
+ 
     res.sendFile(path.join(__dirname + '/public/api.html'));   
 });
+
+
+
+app.get('/connect', (req, res) => {
+    req.session.redisConnectionData = {host:'redis-19729.c10.us-east-1-2.ec2.cloud.redislabs.com', port:19729, auth:'taddeo62'};
+    res.send(req.session.redisConnectionData);    
+});
+
+
+
 
 app.get('/flowers', (req, res) => {
     mongoClient.connect(config.mongoConnectionString, (err, client) => {
