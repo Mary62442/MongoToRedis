@@ -15,28 +15,12 @@ let bcrypt = require('bcrypt');
 // Session 
 let session = require('express-session');
 let redisStore = require('connect-redis')(session);
-
-
-// bcrypt.genSalt(8, function(err, salt) {
-//     bcrypt.hash('diegomary6298', salt, function(err, hash) {
-//         console.log(hash)
-//         bcrypt.compare('diegomary6298', hash, function(err, res) {
-//             console.log(res);   
-// });
-// });
-// });
-
+//bcrypt.genSalt(8, function(err, salt) { bcrypt.hash('diegomary6298', salt, function(err, hash) { console.log(hash); bcrypt.compare('diegomary6298', hash, function(err, res) { console.log(res);});});});
 
 let redisClientforSessions = redis.createClient({host : 'redis-14886.c8.us-east-1-3.ec2.cloud.redislabs.com', port : 14886});
-redisClientforSessions.auth('eRh88pUtQZfwu2mp',(err,reply) => {
-    console.log(err);
-    console.log(reply);
-});
+redisClientforSessions.auth('eRh88pUtQZfwu2mp',(err,reply) => { console.log(err); console.log(reply);});
 redisClientforSessions.on('ready',() =>{ console.log("Redis is ready"); });
 redisClientforSessions.on('error',() => { console.log("Error in Redis"); });
-
-
-
 
 let port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080;
 let ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
@@ -46,13 +30,8 @@ let allowCrossDomain = function (req, res, next) {
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
     // intercept OPTIONS method
-
-    if ('OPTIONS' == req.method) {
-        res.sendStatus(200);
-    }
-    else {
-        next();
-    }
+    if ('OPTIONS' == req.method) {res.sendStatus(200); }
+    else { next(); }
 }
 
 let authenticator = (req,res,next)=> {
@@ -80,51 +59,30 @@ app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {
- 
-    res.sendFile(path.join(__dirname + '/public/api.html'));   
-});
-
-
-
+app.get('/', (req, res) => { res.sendFile(path.join(__dirname + '/public/api.html')); });
 
 
 app.post('/secureconnect', authenticator, (req, res) => {
 
-    let body = req.body;
-    let connectionInfo = body.ConnectionInfo;
-
-    req.session.connectionInfo = connectionInfo;
-
+   let body = req.body;
+// example of request with postman
+// {
+//  "ConnectionInfo" : {"host":"redis-19729.c10.us-east-1-2.ec2.cloud.redislabs.com","port":"19729","auth":"taddeo62"}
+// }
+// content-type application/json
+    if(!body.hasOwnProperty('ConnectionInfo')) { res.send("Improper request:  must supply ConnectionInfo"); return; }
+    let connectionInfo = body.ConnectionInfo;    
     let redisClientUser = redis.createClient({host : connectionInfo.host, port : connectionInfo.port});
-redisClientUser.auth(connectionInfo.auth,(err,reply) => {
+    redisClientUser.auth(connectionInfo.auth,(err,reply) => {
     console.log(err);
     console.log(reply);
 });
-redisClientUser.on('ready',() =>{ console.log("Redis is connected"); res.send('connection ok')});
-redisClientUser.on('error',() => { console.log("Error in Redis"); res.send('unsuccesful') });
-
-    
-    //req.session.redisConnectionData = {host:'redis-19729.c10.us-east-1-2.ec2.cloud.redislabs.com', port:19729, auth:'taddeo62'};
-    //res.send(req.session.redisConnectionData);    
+     redisClientUser.on('ready',() =>{
+     req.session.connectionInfo = connectionInfo;   
+     console.log("Redis is connected"); res.send('connection ok')
+ });
+    redisClientUser.on('error',() => { console.log("Error in Redis"); res.send('unsuccesful') });
 });
-
-
-
-app.get('/flowers', (req, res) => {
-    mongoClient.connect(config.mongoConnectionString, (err, client) => {
-        if (err) res.send('error');
-
-        const db = client.db('marymongodb');
-        //assert.equal(null, err);
-        db.collection('BachFlowers').find({}).toArray((err, flowers) => {
-            client.close();
-            res.send(flowers);
-        });
-    });
-});
-
-//app.use(authenticator);
 
 // app.get('/redisstringsample', (req, res) => { 
 //     redisClient.set("Agrimony","Agrimony is the first flower in the list",(err,reply)=> {
@@ -179,33 +137,10 @@ app.get('/flowers', (req, res) => {
 //     });
 // });
 
-app.post('/updateflowernotes', authenticator, (req, res) => {
-    
-    res.statusCode = 200;
-    mongoClient.connect(config.mongoConnectionString, (err, client) => {
-        let body = req.body;
-        if (err) console.log(err);
-        const db = client.db('marymongodb');
-        let flowers = db.collection('BachFlowers');
-        flowers.update({ Name: req.body.Name },
-        {
-            $set: { Notes: req.body.Notes }
-        }, { multi: false }, (err, result) => {
-            if (err) {
-                console.log(err);
-                res.send(JSON.stringify(err));
-            }
-            client.close();
-            console.log('Successfuly updated: ' + result + ' records.');
-            res.send(JSON.stringify(result));
-        });
-    }); 
-});
-
 
 app.put('/putstringtoredis', authenticator, (req, res) => { 
 
-    if (typeof req.session.connectionInfo === 'undefined') {res.send('please connect first');};
+    if (typeof req.session.connectionInfo === 'undefined') { res.send('please connect first');};
 
     let connectionInfo = req.session.connectionInfo;
     let redisClientUser = redis.createClient({host : connectionInfo.host, port : connectionInfo.port});
