@@ -61,6 +61,22 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname + '/public/api.html')); });
 
+app.get('/testsession', (req, res) => { 
+
+req.session.diegomary = "############# SESSION CONTENT #######################";   
+res.send(req.session.diegomary +" ok. from process " + process.pid);
+
+
+ });
+
+
+app.get('/testsessionreturn', (req, res) => {
+res.send(req.session.diegomary +" ok. from process " + process.pid);
+ });
+
+
+
+
 
 app.post('/secureconnect', authenticator, (req, res) => {
 
@@ -221,7 +237,7 @@ app.put('/putsettoredis', authenticator, (req, res) => {
 });
 
 app.listen(port, ip);
-console.log('Server running on http://%s:%s', ip, port);
+console.log('Server running on http://%s:%s', ip, port,"Process n." ,process.pid);
 
 
 
