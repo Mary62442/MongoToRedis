@@ -1,3 +1,5 @@
+[![DeepScan grade](https://deepscan.io/api/teams/3675/projects/5405/branches/41452/badge/grade.svg)](https://deepscan.io/dashboard#view=project&tid=3675&pid=5405&bid=41452)
+
 Mongo to Redis repo
 ===================
 
