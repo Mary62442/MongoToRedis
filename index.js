@@ -51,7 +51,8 @@ app.use(session({
     // create new redis store.
     store: new redisStore({client: redisClientforSessions}), //https://github.com/tj/connect-redis    for ttl (expiration)
     saveUninitialized: false,
-    resave: false
+    resave: false,
+    name: "cookie-custom-name"
 }));
 
 app.use(allowCrossDomain);
