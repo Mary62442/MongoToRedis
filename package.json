@@ -19,10 +19,10 @@
   "dependencies": {
     "basic-auth": "^2.0.0",
     "bcrypt": "^1.0.3",
-    "body-parser": "^1.18.2",
+    "body-parser": "^1.20.1",
     "cluster": "^0.7.7",
     "connect-redis": "^3.3.3",
-    "express": "^4.16.2",
+    "express": "^4.18.2",
     "express-session": "^1.15.6",
     "mongodb": "^3.0.1",
     "redis": "^2.8.0"
